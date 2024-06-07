@@ -1,0 +1,92 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
+using api.Dtos.Account;
+using api.Dtos.Api;
+using api.Interface;
+using api.Repository;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+
+namespace api.Controllers
+{
+    [ApiController]
+    [Route("api/auth")]
+    public class AuthController : ControllerBase
+    {
+        private readonly IUserRepository _userRepo;
+        private readonly ApplicationDbContext _db;
+        protected APIResponse _response;
+        public AuthController(
+            IUserRepository userRepository,
+            ApplicationDbContext db
+        )
+        {
+            _db = db;
+            _userRepo = userRepository;
+            _response = new();
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterationRequestDTO model)
+        {
+            if (!ModelState.IsValid)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages = ModelState.Values.SelectMany(x => x.Errors.Select(xx => xx.ErrorMessage)).ToList();
+                return BadRequest(_response);
+            }
+            model.Role = "user";
+
+            bool isEmailUnique = _userRepo.IsUniqueUser(model.Email);
+            if (!isEmailUnique)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add("Email already exists");
+                return BadRequest(_response);
+            }
+
+            var user = await _userRepo.Register(model);
+            if (user == null)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add("Error while registering");
+                return BadRequest(_response);
+            }
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.IsSuccess = true;
+            return Ok(_response);
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
+        {
+            var tokenDto = await _userRepo.Login(model);
+            if (tokenDto == null || string.IsNullOrEmpty(tokenDto.AccessToken))
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add("Email or password is incorrect");
+                return BadRequest(_response);
+            }
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.IsSuccess = true;
+            _response.Result = tokenDto;
+            return Ok(_response);
+        }
+
+        [HttpGet("users")]
+        [Authorize(Roles = "user")]
+        public IActionResult Test()
+        {
+            var users = _db.Users.ToList();
+            return Ok(users);
+        }
+    }
+}

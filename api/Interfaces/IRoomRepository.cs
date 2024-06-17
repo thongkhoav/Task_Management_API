@@ -8,8 +8,8 @@ namespace api.Interface
 {
     public interface IRoomRepository
     {
-        ICollection<Room> GetRoombyUserId(Guid userId);
-        ICollection<ApplicationUser> GetUsersOfRoom(Guid roomId);
+        ICollection<Room> GetRoomsByUserId(Guid userId);
+        Task<ICollection<ApplicationUser>> GetUsersOfRoom(Guid roomId);
         bool IsRoomCreator(Guid userId, Guid roomId); // check if user is room
         bool CreateRoom(Guid creatorId, Room room);
         bool UpdateRoom(Room room);

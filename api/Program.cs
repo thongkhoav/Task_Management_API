@@ -3,6 +3,7 @@ using System.Text;
 using api;
 using api.Helper;
 using api.Interface;
+using api.middleware;
 using api.Models;
 using api.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -47,6 +48,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IRoomRepository, RoomRepository>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(typeof(MappingConfig)); // add the automapper to the service container
 
 
@@ -102,6 +104,15 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
 
 
 
@@ -113,6 +124,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+//app.UseExceptionHandler("/ErrorHandling/ProcessError");
+//app.HandleError(app.Environment.IsDevelopment());
+app.UseMiddleware<CustomExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

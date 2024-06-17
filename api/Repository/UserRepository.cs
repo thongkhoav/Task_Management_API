@@ -21,13 +21,15 @@ namespace api.Repository
         private string secretKey;
         private int tokenExpire;
         private IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public UserRepository(
             ApplicationDbContext db,
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole<Guid>> roleManager,
-            IMapper mapper
+            IMapper mapper,
+            IHttpContextAccessor httpContextAccessor
         )
         {
             _db = db;
@@ -38,6 +40,7 @@ namespace api.Repository
             Console.WriteLine("secretKey56465: " + configuration.GetSection("ApiSettings:Secret").Value);
             _configuration = configuration;
             tokenExpire = configuration.GetValue<int>("ApiSettings:AccessTokenExpirationMinutes");
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public bool IsUniqueUser(string email)
@@ -99,7 +102,7 @@ namespace api.Repository
                     new Claim(ClaimTypes.Name, user.Name),
                     new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
                     new Claim(JwtRegisteredClaimNames.Jti, jwtTokenId),
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 }),
                 Expires = DateTime.UtcNow.AddMinutes(tokenExpire),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -159,6 +162,24 @@ namespace api.Repository
                 throw;
             }
             return new UserDTO();
+        }
+
+        public async Task<UserDTO?> GetUserFromToken()
+        {
+            var userId = string.Empty;
+            if (_httpContextAccessor.HttpContext != null)
+            {
+                userId = _httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            }
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return null;
+            }
+
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+            var userMap = _mapper.Map<UserDTO>(user);
+            return userMap;
         }
 
         // public async Task RevokeRefreshToken(TokenDTO tokenDTO)

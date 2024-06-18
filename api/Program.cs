@@ -1,4 +1,3 @@
-using System.Reflection.Metadata;
 using System.Text;
 using api;
 using api.Helper;
@@ -9,14 +8,14 @@ using api.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // builder.Services.AddSingleton<IConfiguration>(Configuration);
+
+
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -104,16 +103,18 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", builder =>
     {
-        builder.AllowAnyOrigin()
+        builder.WithOrigins(
+            "http://localhost:4200",
+            "http://localhost:3000")
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
 });
-
 
 
 var app = builder.Build();
@@ -124,6 +125,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("AllowAll");
 
 //app.UseExceptionHandler("/ErrorHandling/ProcessError");
 //app.HandleError(app.Environment.IsDevelopment());

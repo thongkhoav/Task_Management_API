@@ -39,21 +39,35 @@ namespace api.Repository
             throw new NotImplementedException();
         }
 
-        public ICollection<Room> GetRoomsByUserId(Guid userId)
+        public ICollection<Room?> GetRoomsByUserId(Guid userId)
         {
             // get all rooms of user
-            var rooms = _db.UserRooms.Where(u => u.UserId == userId).Select(r => r.Room).ToList();
+            var rooms = _db.UserRooms.Where(u => u.UserId == userId && u.Room != null)
+            .OrderByDescending(ur => ur.Room!.CreatedAt)
+            .Select(r => r.Room).ToList();
             return rooms;
         }
 
-        public async Task<ICollection<ApplicationUser>> GetUsersOfRoom(Guid roomId)
-        {
-            throw new NotImplementedException();
-        }
+
 
         public bool IsRoomCreator(Guid userId, Guid roomId)
         {
-            throw new NotImplementedException();
+            // check if user is room creator
+            var room = _db.UserRooms.Where(r => r.RoomId == roomId && r.UserId == userId && r.IsOwner).FirstOrDefault();
+            return room != null;
+        }
+
+        public bool IsRoomExist(Guid roomId)
+        {
+            // check room exist
+            var room = _db.Rooms.Where(r => r.Id == roomId).FirstOrDefault();
+            return room != null;
+        }
+
+        public bool IsRoomMember(Guid roomId, Guid userId)
+        {
+            var room = _db.UserRooms.Where(r => r.RoomId == roomId && r.UserId == userId).FirstOrDefault();
+            return room != null;
         }
 
         public bool JoinRoom(Guid userId, Guid roomId)

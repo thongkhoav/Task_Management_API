@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using api.Dtos;
 using api.Dtos.Account;
+using api.Models;
 
 namespace api.Interface
 {
@@ -14,7 +11,7 @@ namespace api.Interface
         Task<UserDTO> Register(RegisterationRequestDTO registerationRequestDTO);
         Task<TokenDTO> RefreshAccessToken(TokenDTO tokenDTO);
         Task<UserDTO?> GetUserFromToken();
-
+        Task<ICollection<ApplicationUser>> GetUsersOfRoom(Guid roomId);
 
         // Task RevokeRefreshToken(TokenDTO tokenDTO);
     }

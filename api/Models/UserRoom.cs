@@ -14,5 +14,6 @@ namespace api.Models
         public Guid RoomId { get; set; }
         public ApplicationUser? User { get; set; }
         public Room? Room { get; set; }
+        public bool IsOwner { get; set; } = false;
     }
 }

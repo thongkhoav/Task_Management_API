@@ -186,5 +186,10 @@ namespace api.Repository
         // {
         //     throw new NotImplementedException();
         // }
+
+        public async Task<ICollection<ApplicationUser>> GetUsersOfRoom(Guid roomId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

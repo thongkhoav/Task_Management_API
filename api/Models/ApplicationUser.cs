@@ -6,6 +6,6 @@ namespace api.Models
     {
         public string Name { get; set; } = string.Empty;
         public ICollection<UserRoom> UserRooms { get; set; } = [];
-        public ICollection<Task> Tasks { get; set; } = [];
+        public ICollection<TaskModel> Tasks { get; set; } = [];
     }
 }

@@ -12,7 +12,9 @@ namespace api.Helper
             CreateMap<ApplicationUser, UserDTO>().ReverseMap();
             CreateMap<Room, CreateRoomDTO>().ReverseMap();
             CreateMap<Room, RoomDTO>().ReverseMap();
-            CreateMap<Models.Task, TaskDTO>().ReverseMap();
+            CreateMap<Models.TaskModel, TaskDTO>().ReverseMap();
+            CreateMap<Models.TaskModel, CreateTaskDTO>().ReverseMap();
+
         }
     }
 }

@@ -1,20 +1,47 @@
 using api.Interface;
+using api.Models;
 
 namespace api.Repository
 {
     public class TaskRepository : ITaskRepository
     {
-        public bool AssignTask(Guid userId, Guid roomId)
+        private ApplicationDbContext _db;
+        public TaskRepository(ApplicationDbContext db)
+        {
+            _db = db;
+        }
+
+        public bool AssignTask(Guid Id, Guid userId)
         {
             throw new NotImplementedException();
         }
 
-        public bool CreateTask(Guid creatorId, Task room)
+        public bool CreateTask(TaskModel task)
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Creating task");
+            if (task.UserId != null)
+            {
+                var assignUser = _db.ApplicationUsers.Where(a => a.Id == task.UserId).FirstOrDefault();
+                if (assignUser != null)
+                {
+                    task.User = assignUser;
+                    task.UserId = assignUser.Id;
+                }
+            }
+            var room = _db.Rooms.Where(a => a.Id ==
+            task.RoomId).FirstOrDefault();
+            if (room != null)
+            {
+                task.Room = room;
+                task.RoomId = room.Id;
+            }
+            task.IsComplete = false;
+            _db.Tasks.Add(task);
+            Console.WriteLine("Task created");
+            return Save();
         }
 
-        public bool DeleteTask(Guid roomId)
+        public bool DeleteTask(Guid id)
         {
             throw new NotImplementedException();
         }
@@ -31,10 +58,11 @@ namespace api.Repository
 
         public bool Save()
         {
-            throw new NotImplementedException();
+            var saved = _db.SaveChanges();
+            return saved > 0;
         }
 
-        public bool UpdateTask(Task room)
+        public bool UpdateTask(TaskModel task)
         {
             throw new NotImplementedException();
         }

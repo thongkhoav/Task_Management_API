@@ -18,6 +18,6 @@ namespace api.Dtos.Account
         [MinLength(6)]
         [DataType(DataType.Password)]
         public string Password { get; set; }
-        public string Role { get; set; }
+        public string? Role { get; set; }
     }
 }

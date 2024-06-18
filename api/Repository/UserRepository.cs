@@ -187,9 +187,41 @@ namespace api.Repository
         //     throw new NotImplementedException();
         // }
 
-        public async Task<ICollection<ApplicationUser>> GetUsersOfRoom(Guid roomId)
+        public async Task<ICollection<ApplicationUser>> GetUsersOfRoom(Guid roomId, bool IncludeOwner)
+        {
+            var users = await _db.UserRooms
+                .Where(ur => ur.RoomId == roomId && (IncludeOwner || !ur.IsOwner))
+                .Select(u => u.User)
+                .ToListAsync();
+            return users;
+        }
+
+        public bool JoinRoom(Guid userId, Guid roomId)
+        {
+            var user = _db.ApplicationUsers.Where(a => a.Id == userId).FirstOrDefault();
+            var room = _db.Rooms.Where(r => r.Id == roomId).FirstOrDefault();
+            var userRoom = new UserRoom()
+            {
+                User = user,
+                Room = room,
+                RoomId = roomId,
+                UserId = userId
+            };
+            userRoom.IsOwner = false;
+            _db.UserRooms.Add(userRoom);
+            return Save();
+        }
+
+        public bool LeaveRoom(Guid userId, Guid roomId)
         {
             throw new NotImplementedException();
         }
+
+        public bool Save()
+        {
+            var saved = _db.SaveChanges();
+            return saved > 0;
+        }
+
     }
 }

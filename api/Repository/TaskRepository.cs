@@ -1,5 +1,6 @@
 using api.Interface;
 using api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace api.Repository
 {
@@ -13,7 +14,19 @@ namespace api.Repository
 
         public bool AssignTask(Guid Id, Guid userId)
         {
-            throw new NotImplementedException();
+            // assign task to user
+            var task = _db.Tasks.Where(t => t.Id == Id).FirstOrDefault();
+            if (task != null)
+            {
+                var user = _db.ApplicationUsers.Where(u => u.Id == userId).FirstOrDefault();
+                if (user != null)
+                {
+                    task.User = user;
+                    task.UserId = user.Id;
+                    return Save();
+                }
+            }
+            return false;
         }
 
         public bool CreateTask(TaskModel task)
@@ -46,12 +59,16 @@ namespace api.Repository
             throw new NotImplementedException();
         }
 
-        public ICollection<Task> GetAllTaskOfRoom(Guid roomId)
+        public async Task<ICollection<TaskModel>> GetAllTaskOfRoom(Guid roomId)
         {
-            throw new NotImplementedException();
+            // get all tasks of room and assigned user of task
+            var tasks = await _db.Tasks.Where(t => t.RoomId == roomId)
+            .Include(t => t.User)
+            .ToListAsync();
+            return tasks;
         }
 
-        public ICollection<Task> GetTasksOfRoomUser(Guid roomId, Guid userId)
+        public ICollection<TaskModel> GetTasksOfRoomUser(Guid roomId, Guid userId)
         {
             throw new NotImplementedException();
         }

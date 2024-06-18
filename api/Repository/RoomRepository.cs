@@ -1,14 +1,22 @@
 using api.Models;
 using api.Interface;
+using Microsoft.EntityFrameworkCore;
+using api.Dtos.Room;
+using api.Dtos;
+using AutoMapper;
 
 namespace api.Repository
 {
     public class RoomRepository : IRoomRepository
     {
         private ApplicationDbContext _db;
-        public RoomRepository(ApplicationDbContext db)
+        private IMapper _mapper;
+        public RoomRepository(ApplicationDbContext db,
+            IMapper mapper
+        )
         {
             _db = db;
+            _mapper = mapper;
         }
 
         public bool AddMemeber(Guid userId, Guid roomId)
@@ -27,6 +35,7 @@ namespace api.Repository
                 RoomId = room.Id,
                 UserId = creatorId
             };
+            userRoom.IsOwner = true;
 
             _db.UserRooms.Add(userRoom);
             _db.Rooms.Add(room);
@@ -46,6 +55,45 @@ namespace api.Repository
             .OrderByDescending(ur => ur.Room!.CreatedAt)
             .Select(r => r.Room).ToList();
             return rooms;
+        }
+
+        public ICollection<RoomDTO?> GetAllRoom(Guid userId)
+        {
+            // IsJoined =  
+            var rooms = _db.UserRooms
+                .OrderByDescending(ur => ur.Room!.CreatedAt)
+                .Select(ur => new RoomDTO
+                {
+                    Id = ur.Room!.Id,
+                    Name = ur.Room!.Name,
+                    Description = ur.Room!.Description,
+                    IsJoined = _db.UserRooms.Any(
+                        u => u.UserId == userId && u.RoomId == ur.Room.Id
+                    )
+                }).ToList();
+            return rooms;
+        }
+
+        public RoomWithOwnerDTO? GetRoomById(Guid roomId)
+        {
+
+
+            var user = _db.UserRooms
+                    .Where(ur => ur.IsOwner && ur.RoomId == roomId)
+                    .Select(r => r.User)
+                    .FirstOrDefault();
+            var room = _db.Rooms
+                    .Where(r => r.Id == roomId)
+                    .FirstOrDefault();
+
+            var roomWithOwner = new RoomWithOwnerDTO()
+            {
+                RoomName = room.Name ?? "",
+                RoomDescription = room.Description,
+                Owner = _mapper.Map<UserDTO>(user)
+            };
+
+            return roomWithOwner;
         }
 
 
@@ -68,16 +116,6 @@ namespace api.Repository
         {
             var room = _db.UserRooms.Where(r => r.RoomId == roomId && r.UserId == userId).FirstOrDefault();
             return room != null;
-        }
-
-        public bool JoinRoom(Guid userId, Guid roomId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool LeaveRoom(Guid userId, Guid roomId)
-        {
-            throw new NotImplementedException();
         }
 
         public bool Save()

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using api.Dtos;
 using api.Dtos.Api;
 using api.Interface;
@@ -15,16 +16,19 @@ namespace api.Controllers.v1
     {
         private readonly ITaskRepository _taskRepo;
         private readonly IUserRepository _userRepo;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         protected APIResponse _response;
         private readonly IMapper _mapper;
         public TaskController(
             ITaskRepository taskRepo,
             IUserRepository userRepo,
-            IMapper mapper
+            IMapper mapper,
+             IHttpContextAccessor httpContextAccessor
         )
         {
             _taskRepo = taskRepo;
             _userRepo = userRepo;
+            _httpContextAccessor = httpContextAccessor;
             _response = new();
             _mapper = mapper;
         }
@@ -32,12 +36,10 @@ namespace api.Controllers.v1
         [HttpGet]
         [Authorize(Roles = "user")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllTaskOfRoom([FromBody]
-         CreateTaskDTO createTaskDTO
-        )
+        public async Task<IActionResult> GetAllTaskOfRoom([FromQuery] Guid roomId)
         {
-            var rooms = _taskRepo.GetAllTaskOfRoom(createTaskDTO.RoomId);
-            var roomsMap = _mapper.Map<List<RoomDTO>>(rooms);
+            var tasks = await _taskRepo.GetAllTaskOfRoom(roomId);
+            var roomsMap = _mapper.Map<List<TaskDTO>>(tasks);
 
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
@@ -63,7 +65,6 @@ namespace api.Controllers.v1
                     return BadRequest(_response);
                 }
 
-                Console.WriteLine("TaskDTO: " + taskDTO.DueDate);
                 // var newTaskDTO = new CreateTaskDTO()
                 // {
                 //     RoomId = taskDTO.RoomId,
@@ -97,5 +98,56 @@ namespace api.Controllers.v1
             Console.WriteLine("Errorasdsad: " + _response.ErrorMessages);
             return BadRequest();
         }
+
+        // create room
+        [HttpPut("assign-user")]
+        [Authorize(Roles = "user")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> AssignTask([FromQuery] Guid taskId, [FromQuery] Guid userId)
+        {
+            try
+            {
+                // var loginUserId = "";
+                // if (_httpContextAccessor.HttpContext != null)
+                // {
+                //     loginUserId = _httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                // }
+                // // check loginUserId is guid
+                // if (!Guid.TryParse(loginUserId, out _))
+                // {
+                //     _response.StatusCode = HttpStatusCode.BadRequest;
+                //     _response.IsSuccess = false;
+                //     _response.ErrorMessages = new() { "Invalid user id" };
+                //     return BadRequest(_response);
+                // }
+
+                // Guid loginUserIdd = Guid.Parse(loginUserId);
+                // var isRoomMember = _userRepo.IsRoomMember(taskId, loginUserIdd);
+
+                var isAssigned = _taskRepo.AssignTask(taskId, userId);
+                if (!isAssigned)
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    _response.IsSuccess = false;
+                    _response.ErrorMessages.Add("Error while assigning task");
+                    return BadRequest(_response);
+                }
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.Result = "Assign task successfully";
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                     = new List<string>() { ex.ToString() };
+            }
+            return BadRequest();
+        }
+
+
+
+
     }
 }

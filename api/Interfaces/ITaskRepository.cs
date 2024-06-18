@@ -8,8 +8,8 @@ namespace api.Interface
 {
     public interface ITaskRepository
     {
-        ICollection<Task> GetAllTaskOfRoom(Guid roomId);
-        ICollection<Task> GetTasksOfRoomUser(Guid roomId, Guid userId);
+        Task<ICollection<TaskModel>> GetAllTaskOfRoom(Guid roomId);
+        ICollection<TaskModel> GetTasksOfRoomUser(Guid roomId, Guid userId);
         bool CreateTask(TaskModel task);
         bool UpdateTask(TaskModel task);
         bool DeleteTask(Guid id);

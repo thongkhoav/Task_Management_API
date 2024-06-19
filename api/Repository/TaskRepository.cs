@@ -1,3 +1,4 @@
+using api.Dtos;
 using api.Interface;
 using api.Models;
 using Microsoft.EntityFrameworkCore;
@@ -72,6 +73,22 @@ namespace api.Repository
         {
             throw new NotImplementedException();
         }
+        public bool UpdateTask(UpdateTaskDTO task)
+        {
+            // update task
+            var taskToUpdate = _db.Tasks.Where(t => t.Id == task.Id).FirstOrDefault();
+            if (taskToUpdate != null)
+            {
+                taskToUpdate.Title = task.Title;
+                taskToUpdate.Description = task.Description;
+                taskToUpdate.DueDate = (DateTime)task.DueDate;
+                taskToUpdate.IsComplete = task.IsComplete;
+                taskToUpdate.UserId = task.UserId;
+                return Save();
+            }
+            return false;
+
+        }
 
         public bool Save()
         {
@@ -79,9 +96,16 @@ namespace api.Repository
             return saved > 0;
         }
 
-        public bool UpdateTask(TaskModel task)
+        public bool UpdateStatusTask(UpdateStatusTaskDTO task)
         {
-            throw new NotImplementedException();
+            // update task status
+            var taskToUpdate = _db.Tasks.Where(t => t.Id == task.Id).FirstOrDefault();
+            if (taskToUpdate != null)
+            {
+                taskToUpdate.IsComplete = task.IsComplete;
+                return Save();
+            }
+            return false;
         }
     }
 }

@@ -99,6 +99,8 @@ namespace api.Controllers.v1
             return BadRequest();
         }
 
+
+
         // create room
         [HttpPut("assign-user")]
         [Authorize(Roles = "user")]
@@ -135,6 +137,39 @@ namespace api.Controllers.v1
 
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.Result = "Assign task successfully";
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                     = new List<string>() { ex.ToString() };
+            }
+            return BadRequest();
+        }
+
+        [HttpPut("status")]
+        [Authorize(Roles = "user")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateStatusTask([FromBody] UpdateStatusTaskDTO dto)
+        {
+            try
+            {
+
+
+                // CHECK USER OF ROOM, OF TASK
+
+                var isUpdated = _taskRepo.UpdateStatusTask(dto);
+                if (!isUpdated)
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    _response.IsSuccess = false;
+                    _response.ErrorMessages.Add("Error while updating task status");
+                    return BadRequest(_response);
+                }
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.Result = "Update task status successfully";
+                _response.IsSuccess = true;
                 return Ok(_response);
             }
             catch (Exception ex)

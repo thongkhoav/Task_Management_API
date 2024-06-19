@@ -60,15 +60,15 @@ namespace api.Repository
         public ICollection<RoomDTO?> GetAllRoom(Guid userId)
         {
             // IsJoined =  
-            var rooms = _db.UserRooms
-                .OrderByDescending(ur => ur.Room!.CreatedAt)
+            var rooms = _db.Rooms
+                .OrderByDescending(ur => ur.CreatedAt)
                 .Select(ur => new RoomDTO
                 {
-                    Id = ur.Room!.Id,
-                    Name = ur.Room!.Name,
-                    Description = ur.Room!.Description,
+                    Id = ur!.Id,
+                    Name = ur!.Name,
+                    Description = ur!.Description,
                     IsJoined = _db.UserRooms.Any(
-                        u => u.UserId == userId && u.RoomId == ur.Room.Id
+                        u => u.UserId == userId && u.RoomId == ur.Id
                     )
                 }).ToList();
             return rooms;

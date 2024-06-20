@@ -181,8 +181,35 @@ namespace api.Controllers.v1
             return BadRequest();
         }
 
-
-
+        [HttpPut("{taskId}")]
+        [Authorize(Roles = "user")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateTask([FromRoute] Guid taskId, [FromBody] UpdateTaskDTO dto)
+        {
+            try
+            {
+                dto.Id = taskId;
+                var isUpdated = _taskRepo.UpdateTask(dto);
+                if (!isUpdated)
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    _response.IsSuccess = false;
+                    _response.ErrorMessages.Add("Error while updating task");
+                    return BadRequest(_response);
+                }
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.Result = "Update task successfully";
+                _response.IsSuccess = true;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                     = new List<string>() { ex.ToString() };
+            }
+            return BadRequest();
+        }
 
     }
 }

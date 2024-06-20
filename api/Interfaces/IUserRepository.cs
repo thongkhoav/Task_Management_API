@@ -8,6 +8,7 @@ namespace api.Interface
     {
         bool IsUniqueUser(string email);
         Task<TokenDTO> Login(LoginRequestDTO loginRequestDTO);
+        Task Logout(TokenDTO tokenDTO);
         Task<UserDTO> Register(RegisterationRequestDTO registerationRequestDTO);
         Task<TokenDTO> RefreshAccessToken(TokenDTO tokenDTO);
         Task<UserDTO?> GetUserFromToken();

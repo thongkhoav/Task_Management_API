@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using api.Dtos;
 using api.Dtos.Api;
 using api.Interface;
@@ -15,16 +16,19 @@ namespace api.Controllers.v1
     {
         private readonly IRoomRepository _roomRepo;
         private readonly IUserRepository _userRepo;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         protected APIResponse _response;
         private readonly IMapper _mapper;
         public RoomController(
             IRoomRepository roomRepo,
             IUserRepository userRepo,
-            IMapper mapper
+            IMapper mapper,
+             IHttpContextAccessor httpContextAccessor
         )
         {
             _roomRepo = roomRepo;
             _userRepo = userRepo;
+            _httpContextAccessor = httpContextAccessor;
             _response = new();
             _mapper = mapper;
         }
@@ -140,6 +144,109 @@ namespace api.Controllers.v1
             return BadRequest();
         }
 
+        [HttpPost("member")]
+        [Authorize(Roles = "user")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult AddMember([FromBody] AddMemberDTO obj)
+        {
+            var userId = "";
+            if (_httpContextAccessor.HttpContext != null)
+            {
+                userId = _httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            }
+            Console.WriteLine("userId: " + userId);
+            // check userId is guid
+            if (!Guid.TryParse(userId, out _))
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages = new() { "Invalid user id" };
+                return BadRequest(_response);
+            }
+            Guid userIdd = Guid.Parse(userId);
+            var IsRoomMember = _roomRepo.IsRoomMember(obj.RoomId, obj.Email);
+            if (IsRoomMember)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add("User is already in room");
+                return BadRequest(_response);
+            }
+            var IsRoomOwner = _roomRepo.IsRoomCreator(userIdd, obj.RoomId);
+            if (!IsRoomOwner)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add("You are not room leader");
+                return BadRequest(_response);
+            }
 
+            var isAdded = _roomRepo.AddMemeber(obj.Email, obj.RoomId);
+            if (!isAdded)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add("Error while adding member");
+                return BadRequest(_response);
+            }
+
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.IsSuccess = true;
+            _response.Result = "Member added successfully";
+            return Ok(_response);
+        }
+
+        [HttpDelete("member")]
+        [Authorize(Roles = "user")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult RemoveMember([FromBody] RemoveMemberDTO obj)
+        {
+            var userId = "";
+            if (_httpContextAccessor.HttpContext != null)
+            {
+                userId = _httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            }
+            Console.WriteLine("userId: " + userId);
+            // check userId is guid
+            if (!Guid.TryParse(userId, out _))
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages = new() { "Invalid user id" };
+                return BadRequest(_response);
+            }
+            Guid userIdd = Guid.Parse(userId);
+            var IsRoomMember = _roomRepo.IsRoomMember(obj.UserId, obj.RoomId);
+            if (!IsRoomMember)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add("User are not room member");
+                return BadRequest(_response);
+            }
+
+            var IsRoomOwner = _roomRepo.IsRoomCreator(userIdd, obj.RoomId);
+            if (!IsRoomOwner)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add("You are not room leader");
+                return BadRequest(_response);
+            }
+
+            var isRemoved = _roomRepo.RemoveMember(obj.UserId, obj.RoomId);
+            if (!isRemoved)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add("Error while removing member");
+                return BadRequest(_response);
+            }
+
+            _response.StatusCode = HttpStatusCode.OK;
+            _response.IsSuccess = true;
+            _response.Result = "Member removed successfully";
+            return Ok(_response);
+        }
     }
 }

@@ -19,9 +19,29 @@ namespace api.Repository
             _mapper = mapper;
         }
 
-        public bool AddMemeber(Guid userId, Guid roomId)
+        public bool AddMemeber(string email, Guid roomId)
         {
-            throw new NotImplementedException();
+            // get user by email
+            var user = _db.ApplicationUsers.Where(a => a.Email == email).FirstOrDefault();
+            var room = _db.Rooms.Where(r => r.Id == roomId).FirstOrDefault();
+            if (user == null || room == null) return false;
+            var userRoom = new UserRoom()
+            {
+                User = user,
+                Room = room,
+                RoomId = roomId,
+                UserId = user.Id
+            };
+            userRoom.IsOwner = false;
+            _db.UserRooms.Add(userRoom);
+            return Save();
+        }
+        public bool RemoveMember(Guid userId, Guid roomId)
+        {
+            var userRoom = _db.UserRooms.Where(u => u.UserId == userId && u.RoomId == roomId).FirstOrDefault();
+            if (userRoom == null) return false;
+            _db.UserRooms.Remove(userRoom);
+            return Save();
         }
 
         public bool CreateRoom(Guid creatorId, Room room)
@@ -97,7 +117,6 @@ namespace api.Repository
         }
 
 
-
         public bool IsRoomCreator(Guid userId, Guid roomId)
         {
             // check if user is room creator
@@ -112,7 +131,15 @@ namespace api.Repository
             return room != null;
         }
 
-        public bool IsRoomMember(Guid roomId, Guid userId)
+        public bool IsRoomMember(Guid roomId, string email)
+        {
+            var user = _db.ApplicationUsers.Where(a => a.Email == email).FirstOrDefault();
+            if (user == null) return false;
+            var room = _db.UserRooms.Where(r => r.RoomId == roomId && r.UserId == user.Id).FirstOrDefault();
+            return room != null;
+        }
+
+        public bool IsRoomMember(Guid userId, Guid roomId)
         {
             var room = _db.UserRooms.Where(r => r.RoomId == roomId && r.UserId == userId).FirstOrDefault();
             return room != null;

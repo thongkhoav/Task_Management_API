@@ -14,12 +14,14 @@ namespace api.Interface
         ICollection<RoomDTO?> GetAllRoom(Guid userId);
         RoomWithOwnerDTO? GetRoomById(Guid roomId);
         bool IsRoomCreator(Guid userId, Guid roomId); // check if user is room
-        bool IsRoomMember(Guid roomId, Guid userId);
+        bool IsRoomMember(Guid roomId, string email);
+        bool IsRoomMember(Guid userId, Guid roomId);
         bool IsRoomExist(Guid roomId); // check if user is room
         bool CreateRoom(Guid creatorId, Room room);
         bool UpdateRoom(Room room);
         bool DeleteRoom(Guid roomId);
-        bool AddMemeber(Guid userId, Guid roomId);
+        bool AddMemeber(string email, Guid roomId);
+        bool RemoveMember(Guid userId, Guid roomId);
         bool Save();
     }
 }

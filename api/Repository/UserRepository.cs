@@ -20,6 +20,7 @@ namespace api.Repository
         private IMapper _mapper;
         private string secretKey;
         private int tokenExpire;
+        private int refreshTokenExpire;
         private IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
@@ -40,6 +41,7 @@ namespace api.Repository
             Console.WriteLine("secretKey56465: " + configuration.GetSection("ApiSettings:Secret").Value);
             _configuration = configuration;
             tokenExpire = configuration.GetValue<int>("ApiSettings:AccessTokenExpirationMinutes");
+            refreshTokenExpire = configuration.GetValue<int>("ApiSettings:RefreshTokenExpirationMinutes");
             _httpContextAccessor = httpContextAccessor;
         }
 
@@ -104,15 +106,9 @@ namespace api.Repository
 
         private async Task<string> CreateAccessToken(ApplicationUser user, string jwtTokenId)
         {
-            Console.WriteLine("CreateAccessToken: " + user.Email);
-
             var roles = await _userManager.GetRolesAsync(user);
-            Console.WriteLine("secretKeysasd: " + secretKey);
-            var tokenHandler = new JwtSecurityTokenHandler();
+            var jwtTokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(secretKey);
-            Console.WriteLine("secretKey: " + secretKey);
-            Console.WriteLine("tokenExpire: " + tokenExpire);
-            Console.WriteLine("useridsadsd: " + user.Id.ToString());
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]
@@ -126,8 +122,8 @@ namespace api.Repository
                 Expires = DateTime.UtcNow.AddMinutes(tokenExpire),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            var token = jwtTokenHandler.CreateToken(tokenDescriptor);
+            return jwtTokenHandler.WriteToken(token);
         }
 
         private async Task<string> CreateNewRefreshToken(string userId, string tokenId)
@@ -139,7 +135,7 @@ namespace api.Repository
                 JwtTokenId = tokenId,
                 Refresh_Token = Guid.NewGuid() + "-" + Guid.NewGuid(),
                 IsValid = true,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(5)
+                ExpiresAt = DateTime.Now.AddMinutes(refreshTokenExpire)
             };
             await _db.RefreshTokens.AddAsync(refreshToken);
             await _db.SaveChangesAsync();
@@ -239,8 +235,8 @@ namespace api.Repository
         {
             try
             {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var jwt = tokenHandler.ReadJwtToken(accessToken);
+                var jwtTokenHandler = new JwtSecurityTokenHandler();
+                var jwt = jwtTokenHandler.ReadJwtToken(accessToken);
                 var jwtTokenId = jwt.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Jti).Value;
                 var userId = jwt.Claims.FirstOrDefault(u => u.Type == JwtRegisteredClaimNames.Sub).Value;
 
